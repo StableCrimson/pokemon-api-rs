@@ -2,14 +2,33 @@ mod combat;
 mod pokemon;
 mod trainer;
 
-use pokemon::{Type, GrowthRate};
+use pokemon::{BaseStats, Pokemon, Stats, MoveSet, GrowthRate, PokemonSpecies, Type};
 use trainer::Trainer;
 
 fn main() {
+
     let trainer: Trainer = Trainer::new("Rhyse");
-    println!("{}", Type::Dragon as u8);
-    println!("{}", GrowthRate::Fast as u8);
-    println!("Hello, world!, {} {}", trainer.name, trainer.trainer_id);
+    println!("Hello, world!, {:?}", trainer);
+
+    let ivs = BaseStats::generate_ivs();
+    println!("{:?}", ivs);
+
+    let mut evs = Stats::new(100, 100, 100, 100, 100);
+    println!("{:?}", evs);
+
+    let opponent_stats = BaseStats::new(100, 100, 100, 100, 100); 
+    evs.calc_new_evs(&opponent_stats);
+    println!("{:?}", evs);
+
+    println!("{}", pokemon::Pokemon::calc_level_up_hp(9, 10, 6, 20));
+    println!("{}", pokemon::Pokemon::calc_level_up_hp(10, 10, 6, 2500));
+
+    let base_stats = BaseStats::new(10, 5, 6, 8, 7);
+    let initial_moves = MoveSet::empty();
+    let charizard_base = PokemonSpecies::new(3, "Charizard".to_string(), base_stats, Type::Fire, Type::Flying, 200, 200, GrowthRate::Fast, initial_moves);
+    let charizard = Pokemon::new(charizard_base, 15, trainer, None, Some("BYRNE".to_string()));
+    println!("{:?}", charizard);
+
 }
 
 // What should the API look like?
