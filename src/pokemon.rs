@@ -226,16 +226,22 @@ pub struct Pokemon {
 
 impl Pokemon {
 
-    pub fn new(species: PokemonSpecies, level: u8, original_trainer: Trainer, moveset: Option<MoveSet>, nickname: Option<String>) -> Self {
+    pub fn new(species: PokemonSpecies, level: u8, original_trainer: Trainer, moveset: Option<MoveSet>, nickname: Option<String>) -> Result<Self, String> {
+
+        if level < 1 {
+            return Err("Cannot instantiate Pokemon below level 1".to_string());
+        }
 
         let moves = match moveset {
             Some(moves) => moves,
             None => species.initial_moves
         };
+
         let ivs = BaseStats::generate_ivs();
         let evs = Stats::new(0, 0, 0, 0, 0);
         let stats: Stats = species.base_stats.into();
         let status = 0;
+
         let mut pokemon = Self {
             species,
             current_hp: stats.hp,
@@ -254,15 +260,51 @@ impl Pokemon {
             pokemon.level_up();
         }
 
-        pokemon
+        Ok(pokemon)
 
+    }
+
+    pub fn exp_for_next_level(&self) -> u32 {
+        self.exp_for_level(self.level + 1)
+    }
+
+    pub fn exp_for_level(&self, target_level: u8) -> u32 {
+
+        let next_level = target_level as u32 + 1;
+
+        match self.species.growth_rate {
+            GrowthRate::Slow => {
+                (5 * u32::pow(next_level, 3)) / 4
+            },
+            GrowthRate::MediumSlow => {
+                ((6.0 / 5.0) * u32::pow(next_level, 3) as f64) as u32 - (15 * u32::pow(next_level, 2)) + (100 * next_level) - 140
+            },
+            GrowthRate::MediumFast => {
+                next_level^3
+            },
+            GrowthRate::Fast => {
+                (4 * u32::pow(next_level, 3)) / 5
+            },
+        }
     }
 
     pub fn set_status(&mut self, status: Status) {
         self.status |= status as u8;
     }
 
+    pub fn get_name(&self) -> &str {
+        match &self.nickname {
+            Some(s) => s,
+            None => &self.species.name
+        }
+    }
+
     pub fn level_up(&mut self) {
+
+        if self.level == 100 {
+            println!("{} has reached level 100. Can no longer level up", self.get_name());
+            return;
+        }
 
         self.level += 1;
         self.stats.hp = Self::calc_level_up_hp(self.level, self.species.base_stats.hp, self.ivs.hp, self.evs.hp);
@@ -273,11 +315,11 @@ impl Pokemon {
 
     }
 
-    pub fn calc_level_up_hp(level: u8, base: u8, iv: u8, ev: u16) -> u16 {
+    fn calc_level_up_hp(level: u8, base: u8, iv: u8, ev: u16) -> u16 {
         Self::calc_level_up_stat(level, base, iv, ev) + level as u16 + 5
     }
 
-    pub fn calc_level_up_stat(level: u8, base: u8, iv: u8, ev: u16) -> u16 {
+    fn calc_level_up_stat(level: u8, base: u8, iv: u8, ev: u16) -> u16 {
 
         let base_default = (base + iv) * 2;
 

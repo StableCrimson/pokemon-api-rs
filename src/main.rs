@@ -20,14 +20,11 @@ fn main() {
     evs.calc_new_evs(&opponent_stats);
     println!("{:?}", evs);
 
-    println!("{}", pokemon::Pokemon::calc_level_up_hp(9, 10, 6, 20));
-    println!("{}", pokemon::Pokemon::calc_level_up_hp(10, 10, 6, 2500));
-
     let base_stats = BaseStats::new(10, 5, 6, 8, 7);
     let initial_moves = MoveSet::empty();
     let charizard_base = PokemonSpecies::new(3, "Charizard".to_string(), base_stats, Type::Fire, Type::Flying, 200, 200, GrowthRate::Fast, initial_moves);
-    let charizard = Pokemon::new(charizard_base, 15, trainer, None, Some("BYRNE".to_string()));
-    println!("{:?}", charizard);
+    let charizard = Pokemon::new(charizard_base, 82, trainer, None, None).unwrap_or_else(|err| panic!("{}", err));
+    println!("{}", charizard.exp_for_next_level());
 
 }
 
