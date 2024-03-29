@@ -99,11 +99,11 @@ impl Into<Stats> for BaseStats {
 /// be broken out into their own struct later
 #[derive(Debug)]
 pub struct Stats {
-    hp: u16,
-    attack: u16,
-    defense: u16,
-    speed: u16,
-    special: u16,
+    pub hp: u16,
+    pub attack: u16,
+    pub defense: u16,
+    pub speed: u16,
+    pub special: u16,
 }
 
 impl Stats {
@@ -128,13 +128,13 @@ impl Stats {
 
 #[derive(Debug)]
 pub struct PokemonSpecies {
-    pokedex_number: u8,
-    name: String,
+    pub pokedex_number: u8,
+    pub name: String,
     base_stats: BaseStats,
-    type1: Type,
-    type2: Type,
+    pub type1: Type,
+    pub type2: Type,
     catch_rate: u8,
-    base_exp_yield: u8,
+    pub base_exp_yield: u8,
     growth_rate: GrowthRate,
     initial_moves: MoveSet,
 }
@@ -165,6 +165,10 @@ impl PokemonSpecies {
             growth_rate,
             initial_moves,
         }
+    }
+
+    pub fn catch_rate(&self) -> u8 {
+        self.catch_rate
     }
 }
 
@@ -220,16 +224,17 @@ impl MoveSet {
         *move_pp_ref = 0; // TODO: Set this to the default PP of the move if Some(Move)
     }
 }
+
 /// Represent a player's caught Pokemon
 #[derive(Debug)]
 pub struct Pokemon {
-    species: PokemonSpecies,
-    current_hp: u16,
-    level: u8,
+    pub species: PokemonSpecies,
+    pub current_hp: u16,
+    pub level: u8,
     stats: Stats,
     status: u8,
-    original_trainer_id: u16, // TODO: I'd like to have a reference to the actual trainer instead
-    nickname: Option<String>,
+    pub original_trainer_id: Option<u16>, // TODO: I'd like to have a reference to the actual trainer instead
+    pub nickname: Option<String>,
     exp: u32,
     evs: Stats,
     ivs: BaseStats,
@@ -237,10 +242,13 @@ pub struct Pokemon {
 }
 
 impl Pokemon {
+
+    /// `original_trainer` is optional
+    /// if it isn't provided, the Pokemon is wild
     pub fn new(
         species: PokemonSpecies,
         level: u8,
-        original_trainer: &Trainer,
+        original_trainer: Option<&Trainer>,
         moveset: Option<MoveSet>,
         nickname: Option<String>,
     ) -> Result<Self, String> {
@@ -251,6 +259,11 @@ impl Pokemon {
         let moves = match moveset {
             Some(moves) => moves,
             None => species.initial_moves,
+        };
+
+        let trainer_id = match original_trainer {
+            Some(trainer) => Some(trainer.trainer_id),
+            None => None
         };
 
         let ivs = BaseStats::generate_ivs();
@@ -264,7 +277,7 @@ impl Pokemon {
             level: 1,
             stats,
             status,
-            original_trainer_id: original_trainer.trainer_id,
+            original_trainer_id: trainer_id,
             nickname,
             exp: 0,
             evs,
@@ -299,6 +312,10 @@ impl Pokemon {
         }
     }
 
+    pub fn get_status(&mut self) -> u8 {
+        self.status
+    }
+
     pub fn set_status(&mut self, status: Status) {
         self.status |= status as u8;
     }
@@ -310,7 +327,7 @@ impl Pokemon {
         }
     }
 
-    pub fn get_original_trainer_id(&self) -> u16 {
+    pub fn get_original_trainer_id(&self) -> Option<u16> {
         self.original_trainer_id
     }
 
@@ -371,4 +388,28 @@ impl Pokemon {
         new_stat = f64::floor(new_stat / 100.0);
         new_stat as u16 + 5
     }
+
+    pub fn stats(&self) -> &Stats {
+        &self.stats
+    }
+
+    pub fn set_stats(&mut self, stats: Stats) {
+        self.stats = stats;
+    }
+
+    pub fn has_status_effect(&self, status: Status) -> bool {
+        self.status & status as u8 > 0
+    }
+
+    pub fn is_wild(&self) -> bool {
+        if let Some(_) = self.original_trainer_id {
+            return false;
+        }
+        true
+    }
+
+    pub fn is_outsider(&self, trainer_id: u16) -> bool {
+        self.original_trainer_id != Some(trainer_id)
+    }
+
 }
