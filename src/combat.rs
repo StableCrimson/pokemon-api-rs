@@ -82,19 +82,18 @@ pub fn catch(pokeball: PokeBall, pokemon: &Pokemon) -> bool {
         _ => random::<u8>() % 150,
     };
 
-    let status_threshold = if pokemon.has_status_effect(Status::Asleep) {
-        25
-    } else if pokemon.has_status_effect(Status::Frozen) {
-        25
-    } else if pokemon.has_status_effect(Status::Paralyzed) {
-        12
-    } else if pokemon.has_status_effect(Status::Poisoned) {
-        12
-    } else if pokemon.has_status_effect(Status::Burned) {
-        12
-    } else {
-        0
-    };
+    let mut status_threshold = 0;
+
+    if pokemon.has_status_effect(Status::Paralyzed) ||
+    pokemon.has_status_effect(Status::Poisoned) ||
+    pokemon.has_status_effect(Status::Burned) {
+        status_threshold = 12;
+    }
+
+    if pokemon.has_status_effect(Status::Asleep) ||
+    pokemon.has_status_effect(Status::Frozen) {
+        status_threshold = 25;
+    } 
 
     if n < status_threshold {
         return true;
