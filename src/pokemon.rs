@@ -81,18 +81,6 @@ impl BaseStats {
     }
 }
 
-impl Into<Stats> for BaseStats {
-    fn into(self) -> Stats {
-        Stats {
-            hp: self.hp as u16,
-            attack: self.attack as u16,
-            defense: self.defense as u16,
-            speed: self.speed as u16,
-            special: self.special as u16,
-        }
-    }
-}
-
 // TODO: Maybe make EVs their own struct?
 /// Represents the current status of a given Pokemon
 /// This is also used to store EVs (AKA Stat Exp) but EVs might
@@ -126,6 +114,18 @@ impl Stats {
     }
 }
 
+impl From<BaseStats> for Stats {
+    fn from(val: BaseStats) -> Self {
+        Stats {
+            hp: val.hp as u16,
+            attack: val.attack as u16,
+            defense: val.defense as u16,
+            speed: val.speed as u16,
+            special: val.special as u16,
+        }
+    }
+}
+
 #[derive(Debug)]
 pub struct PokemonSpecies {
     pub pokedex_number: u8,
@@ -133,7 +133,7 @@ pub struct PokemonSpecies {
     base_stats: BaseStats,
     pub type1: Type,
     pub type2: Type,
-    catch_rate: u8,
+    pub catch_rate: u8,
     pub base_exp_yield: u8,
     growth_rate: GrowthRate,
     initial_moves: MoveSet,
@@ -167,9 +167,6 @@ impl PokemonSpecies {
         }
     }
 
-    pub fn catch_rate(&self) -> u8 {
-        self.catch_rate
-    }
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -242,7 +239,6 @@ pub struct Pokemon {
 }
 
 impl Pokemon {
-
     /// `original_trainer` is optional
     /// if it isn't provided, the Pokemon is wild
     pub fn new(
@@ -261,11 +257,7 @@ impl Pokemon {
             None => species.initial_moves,
         };
 
-        let trainer_id = match original_trainer {
-            Some(trainer) => Some(trainer.trainer_id),
-            None => None
-        };
-
+        let trainer_id = original_trainer.map(|trainer| trainer.trainer_id);
         let ivs = BaseStats::generate_ivs();
         let evs = Stats::new(0, 0, 0, 0, 0);
         let stats: Stats = species.base_stats.into();
@@ -402,14 +394,10 @@ impl Pokemon {
     }
 
     pub fn is_wild(&self) -> bool {
-        if let Some(_) = self.original_trainer_id {
-            return false;
-        }
-        true
+        self.original_trainer_id.is_none()
     }
 
     pub fn is_outsider(&self, trainer_id: u16) -> bool {
         self.original_trainer_id != Some(trainer_id)
     }
-
 }

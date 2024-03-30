@@ -1,15 +1,15 @@
 use crate::{
-    pokemon::{Pokemon, PokemonSpecies, Status},
+    pokemon::{Pokemon, Status},
     trainer::Trainer,
 };
 use rand::random;
 
 #[derive(PartialEq)]
 pub enum PokeBall {
-    PokeBall,
-    GreatBall,
-    UltraBall,
-    MasterBall,
+    Normal,
+    Great,
+    Ultra,
+    Master,
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -53,7 +53,6 @@ pub fn calc_exp_gain(trainer: &Trainer, winner: &Pokemon, loser: &Pokemon) -> u1
     // if it is:
     //  https://bulbapedia.bulbagarden.net/wiki/Experience#In_the_core_series
     let portion = 1.0;
-    let original_trainer_id = winner.original_trainer_id;
 
     let outsider_bonus = if winner.is_outsider(trainer.trainer_id) {
         1.5
@@ -73,39 +72,49 @@ pub fn calc_exp_gain(trainer: &Trainer, winner: &Pokemon, loser: &Pokemon) -> u1
 pub fn attack() {}
 
 pub fn catch(pokeball: PokeBall, pokemon: &Pokemon) -> bool {
-    if pokeball == PokeBall::MasterBall {
+    if pokeball == PokeBall::Master {
         return true;
     }
 
     let n = match pokeball {
-        PokeBall::PokeBall => random::<u8>(),
-        PokeBall::GreatBall => random::<u8>() % 200,
+        PokeBall::Normal => random::<u8>(),
+        PokeBall::Great => random::<u8>() % 200,
         _ => random::<u8>() % 150,
     };
 
-    if (pokemon.has_status_effect(Status::Frozen)) && n < 25 {
+    let status_threshold = if pokemon.has_status_effect(Status::Asleep) {
+        25
+    } else if pokemon.has_status_effect(Status::Frozen) {
+        25
+    } else if pokemon.has_status_effect(Status::Paralyzed) {
+        12
+    } else if pokemon.has_status_effect(Status::Poisoned) {
+        12
+    } else if pokemon.has_status_effect(Status::Burned) {
+        12
+    } else {
+        0
+    };
+
+    if n < status_threshold {
         return true;
     }
 
-    if (pokemon.has_status_effect(Status::Paralyzed)
-        || pokemon.has_status_effect(Status::Burned)
-        || pokemon.has_status_effect(Status::Poisoned))
-        && n < 12
-    {
-        return true;
+    if n - status_threshold > pokemon.species.catch_rate {
+        return false;
     }
 
     let m = random::<u8>();
 
     let ball_modifier = match pokeball {
-        PokeBall::GreatBall => 8,
+        PokeBall::Great => 8,
         _ => 12,
     };
 
     let f =
         (pokemon.stats().hp as u64 * 255 * 4) as u8 / (pokemon.current_hp * ball_modifier) as u8;
 
-    if f >= m.into() {
+    if f >= m {
         return true;
     }
 

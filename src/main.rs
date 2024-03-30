@@ -42,7 +42,7 @@ fn main() {
     assert!(!charizard.is_wild());
     assert!(!charizard.is_outsider(trainer.trainer_id));
     // Try to catch charizard
-    let did_catch = combat::catch(PokeBall::PokeBall, &charizard);
+    let did_catch = combat::catch(PokeBall::Normal, &charizard);
     println!("{did_catch}");
 
 }
