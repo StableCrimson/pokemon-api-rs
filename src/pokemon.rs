@@ -26,10 +26,10 @@ pub enum Type {
 
 #[derive(Debug)]
 pub enum GrowthRate {
-    MediumFast = 0,
-    MediumSlow = 3,
-    Fast = 4,
-    Slow = 5,
+    MediumFast,
+    MediumSlow,
+    Fast,
+    Slow,
 }
 
 #[derive(Debug)]
@@ -49,17 +49,21 @@ pub struct BaseStats {
     attack: u8,
     defense: u8,
     speed: u8,
-    special: u8
+    special: u8,
 }
 
 impl BaseStats {
-
     pub fn new(hp: u8, attack: u8, defense: u8, speed: u8, special: u8) -> Self {
-        Self { hp, attack, defense, speed, special }
+        Self {
+            hp,
+            attack,
+            defense,
+            speed,
+            special,
+        }
     }
 
     pub fn generate_ivs() -> Self {
-
         let attack = random::<u8>() % 16;
         let defense = random::<u8>() % 16;
         let speed = random::<u8>() % 16;
@@ -74,37 +78,31 @@ impl BaseStats {
             speed,
             special,
         }
-
-    }
-
-}
-
-impl Into<Stats> for BaseStats {
-    fn into(self) -> Stats {
-        Stats {
-            hp: self.hp as u16,
-            attack: self.attack as u16,
-            defense: self.defense as u16,
-            speed: self.speed as u16,
-            special: self.special as u16,
-        }
     }
 }
 
-/// This is also used to store EVs
+// TODO: Maybe make EVs their own struct?
+/// Represents the current status of a given Pokemon
+/// This is also used to store EVs (AKA Stat Exp) but EVs might
+/// be broken out into their own struct later
 #[derive(Debug)]
 pub struct Stats {
-    hp: u16,
-    attack: u16,
-    defense: u16,
-    speed: u16,
-    special: u16
+    pub hp: u16,
+    pub attack: u16,
+    pub defense: u16,
+    pub speed: u16,
+    pub special: u16,
 }
 
 impl Stats {
-
     pub fn new(hp: u16, attack: u16, defense: u16, speed: u16, special: u16) -> Self {
-        Self { hp, attack, defense, speed, special }
+        Self {
+            hp,
+            attack,
+            defense,
+            speed,
+            special,
+        }
     }
 
     pub fn calc_new_evs(&mut self, opponent_stats: &BaseStats) {
@@ -114,29 +112,48 @@ impl Stats {
         self.speed += opponent_stats.speed as u16;
         self.special += opponent_stats.special as u16;
     }
+}
 
+impl From<BaseStats> for Stats {
+    fn from(val: BaseStats) -> Self {
+        Stats {
+            hp: val.hp as u16,
+            attack: val.attack as u16,
+            defense: val.defense as u16,
+            speed: val.speed as u16,
+            special: val.special as u16,
+        }
+    }
 }
 
 #[derive(Debug)]
 pub struct PokemonSpecies {
-    pokedex_number: u8,
-    name: String,
+    pub pokedex_number: u8,
+    pub name: String,
     base_stats: BaseStats,
-    type1: Type,
-    type2: Type,
-    catch_rate: u8,
-    base_exp_yield: u8,
+    pub type1: Type,
+    pub type2: Type,
+    pub catch_rate: u8,
+    pub base_exp_yield: u8,
     growth_rate: GrowthRate,
     initial_moves: MoveSet,
 }
 
 impl PokemonSpecies {
-
     // TODO: Have a `from_name()` method
     // TODO: Have a `from_pokedex_id` method
 
-    pub fn new(pokedex_number: u8, name: String, base_stats: BaseStats, type1: Type, type2: Type, catch_rate: u8, base_exp_yield: u8, growth_rate: GrowthRate, initial_moves: MoveSet) -> Self {
-    
+    pub fn new(
+        pokedex_number: u8,
+        name: String,
+        base_stats: BaseStats,
+        type1: Type,
+        type2: Type,
+        catch_rate: u8,
+        base_exp_yield: u8,
+        growth_rate: GrowthRate,
+        initial_moves: MoveSet,
+    ) -> Self {
         Self {
             pokedex_number,
             name,
@@ -146,12 +163,11 @@ impl PokemonSpecies {
             catch_rate,
             base_exp_yield,
             growth_rate,
-            initial_moves
+            initial_moves,
         }
-
     }
-
 }
+
 #[derive(Copy, Clone, Debug)]
 pub struct MoveSet {
     move1: Option<Move>,
@@ -165,18 +181,8 @@ pub struct MoveSet {
 }
 
 impl MoveSet {
-
     pub fn empty() -> Self {
-        Self {
-            move1: None,
-            move2: None,
-            move3: None,
-            move4: None,
-            move1_pp: 0,
-            move2_pp: 0,
-            move3_pp: 0,
-            move4_pp: 0,
-        }
+        Self::new(None, None, None, None, 0, 0, 0, 0)
     }
 
     pub fn new(
@@ -189,35 +195,42 @@ impl MoveSet {
         move3_pp: u8,
         move4_pp: u8,
     ) -> Self {
-        Self { move1, move2, move3, move4, move1_pp, move2_pp, move3_pp, move4_pp }
+        Self {
+            move1,
+            move2,
+            move3,
+            move4,
+            move1_pp,
+            move2_pp,
+            move3_pp,
+            move4_pp,
+        }
     }
 
     pub fn replace_move(&mut self, index: usize, new_move: Option<Move>) {
-
         let (move_ref, move_pp_ref) = match index {
-            1 => ( &mut self.move1, &mut self.move1_pp ),
-            2 => ( &mut self.move2, &mut self.move2_pp ),
-            3 => ( &mut self.move3, &mut self.move3_pp ),
-            4 => ( &mut self.move4, &mut self.move4_pp ),
-            _ => panic!("Invalid move index!")
+            1 => (&mut self.move1, &mut self.move1_pp),
+            2 => (&mut self.move2, &mut self.move2_pp),
+            3 => (&mut self.move3, &mut self.move3_pp),
+            4 => (&mut self.move4, &mut self.move4_pp),
+            _ => panic!("Invalid move index!"),
         };
 
         *move_ref = new_move;
         *move_pp_ref = 0; // TODO: Set this to the default PP of the move if Some(Move)
-
     }
-
 }
+
 /// Represent a player's caught Pokemon
 #[derive(Debug)]
 pub struct Pokemon {
-    species: PokemonSpecies,
-    current_hp: u16,
-    level: u8,
+    pub species: PokemonSpecies,
+    pub current_hp: u16,
+    pub level: u8,
     stats: Stats,
     status: u8,
-    original_trainer: Trainer,
-    nickname: Option<String>,
+    pub original_trainer_id: Option<u16>, // TODO: I'd like to have a reference to the actual trainer instead
+    pub nickname: Option<String>,
     exp: u32,
     evs: Stats,
     ivs: BaseStats,
@@ -225,69 +238,186 @@ pub struct Pokemon {
 }
 
 impl Pokemon {
+    pub fn new_caught(
+        species: PokemonSpecies,
+        level: u8,
+        original_trainer: &Trainer,
+        moveset: Option<MoveSet>,
+        nickname: Option<String>,
+    ) -> Result<Self, String> {
+        let mut pokemon = Pokemon::new_wild(species, level, moveset)?;
+        pokemon.register_caught(original_trainer, nickname)?;
+        Ok(pokemon)
+    }
 
-    pub fn new(species: PokemonSpecies, level: u8, original_trainer: Trainer, moveset: Option<MoveSet>, nickname: Option<String>) -> Self {
+    pub fn new_wild(
+        species: PokemonSpecies,
+        level: u8,
+        moveset: Option<MoveSet>,
+    ) -> Result<Self, String> {
+        if level < 1 {
+            return Err("Cannot instantiate Pokemon below level 1".to_string());
+        }
 
         let moves = match moveset {
             Some(moves) => moves,
-            None => species.initial_moves
+            None => species.initial_moves,
         };
+
         let ivs = BaseStats::generate_ivs();
         let evs = Stats::new(0, 0, 0, 0, 0);
         let stats: Stats = species.base_stats.into();
         let status = 0;
+
         let mut pokemon = Self {
             species,
             current_hp: stats.hp,
             level: 1,
             stats,
             status,
-            original_trainer,
-            nickname,
+            original_trainer_id: None,
+            nickname: None,
             exp: 0,
             evs,
             ivs,
-            moveset: moves
+            moveset: moves,
         };
 
         for _ in 1..level {
             pokemon.level_up();
         }
 
-        pokemon
+        Ok(pokemon)
+    }
 
+    pub fn exp_for_next_level(&self) -> u32 {
+        self.exp_for_level(self.level + 1)
+    }
+
+    pub fn exp_for_level(&self, target_level: u8) -> u32 {
+        let next_level = target_level as u32 + 1;
+
+        match self.species.growth_rate {
+            GrowthRate::Slow => (5 * u32::pow(next_level, 3)) / 4,
+            GrowthRate::MediumSlow => {
+                ((6.0 / 5.0) * u32::pow(next_level, 3) as f64) as u32
+                    - (15 * u32::pow(next_level, 2))
+                    + (100 * next_level)
+                    - 140
+            }
+            GrowthRate::MediumFast => next_level ^ 3,
+            GrowthRate::Fast => (4 * u32::pow(next_level, 3)) / 5,
+        }
+    }
+
+    pub fn get_status(&mut self) -> u8 {
+        self.status
     }
 
     pub fn set_status(&mut self, status: Status) {
         self.status |= status as u8;
     }
 
-    pub fn level_up(&mut self) {
+    pub fn get_name(&self) -> &str {
+        if let Some(nickname) = &self.nickname {
+            return nickname;
+        }
 
-        self.level += 1;
-        self.stats.hp = Self::calc_level_up_hp(self.level, self.species.base_stats.hp, self.ivs.hp, self.evs.hp);
-        self.stats.attack = Self::calc_level_up_stat(self.level, self.species.base_stats.attack, self.ivs.attack, self.evs.attack);
-        self.stats.defense = Self::calc_level_up_stat(self.level, self.species.base_stats.defense, self.ivs.defense, self.evs.defense);
-        self.stats.speed = Self::calc_level_up_stat(self.level, self.species.base_stats.speed, self.ivs.speed, self.evs.speed);
-        self.stats.special = Self::calc_level_up_stat(self.level, self.species.base_stats.special, self.ivs.special, self.evs.special);
-
+        &self.species.name
     }
 
-    pub fn calc_level_up_hp(level: u8, base: u8, iv: u8, ev: u16) -> u16 {
+    pub fn get_original_trainer_id(&self) -> Option<u16> {
+        self.original_trainer_id
+    }
+
+    pub fn level_up(&mut self) {
+        if self.level == 100 {
+            println!(
+                "{} has reached level 100. Can no longer level up",
+                self.get_name()
+            );
+            return;
+        }
+
+        self.level += 1;
+        self.stats.hp = Self::calc_level_up_hp(
+            self.level,
+            self.species.base_stats.hp,
+            self.ivs.hp,
+            self.evs.hp,
+        );
+        self.stats.attack = Self::calc_level_up_stat(
+            self.level,
+            self.species.base_stats.attack,
+            self.ivs.attack,
+            self.evs.attack,
+        );
+        self.stats.defense = Self::calc_level_up_stat(
+            self.level,
+            self.species.base_stats.defense,
+            self.ivs.defense,
+            self.evs.defense,
+        );
+        self.stats.speed = Self::calc_level_up_stat(
+            self.level,
+            self.species.base_stats.speed,
+            self.ivs.speed,
+            self.evs.speed,
+        );
+        self.stats.special = Self::calc_level_up_stat(
+            self.level,
+            self.species.base_stats.special,
+            self.ivs.special,
+            self.evs.special,
+        );
+    }
+
+    fn calc_level_up_hp(level: u8, base: u8, iv: u8, ev: u16) -> u16 {
         Self::calc_level_up_stat(level, base, iv, ev) + level as u16 + 5
     }
 
-    pub fn calc_level_up_stat(level: u8, base: u8, iv: u8, ev: u16) -> u16 {
-
+    fn calc_level_up_stat(level: u8, base: u8, iv: u8, ev: u16) -> u16 {
         let base_default = (base + iv) * 2;
 
         let mut stat_sqrt = f64::sqrt(ev.into());
         stat_sqrt = f64::ceil(stat_sqrt) / 4.0;
         stat_sqrt = f64::floor(stat_sqrt);
-        
+
         let mut new_stat = (base_default as f64 + stat_sqrt) * level as f64;
         new_stat = f64::floor(new_stat / 100.0);
         new_stat as u16 + 5
+    }
 
+    pub fn stats(&self) -> &Stats {
+        &self.stats
+    }
+
+    pub fn has_status_effect(&self, status: Status) -> bool {
+        self.status & status as u8 > 0
+    }
+
+    pub fn is_wild(&self) -> bool {
+        self.original_trainer_id.is_none()
+    }
+
+    pub fn is_outsider(&self, trainer_id: u16) -> bool {
+        self.original_trainer_id != Some(trainer_id)
+    }
+
+    pub fn register_caught(
+        &mut self,
+        original_trainer: &Trainer,
+        nickname: Option<String>,
+    ) -> Result<(), String> {
+        if !self.is_wild() {
+            return Err(format!(
+                "{} has already been caught, cannot re-register",
+                self.get_name()
+            ));
+        }
+
+        self.nickname = nickname;
+        self.original_trainer_id = Some(original_trainer.trainer_id);
+        Ok(())
     }
 }
