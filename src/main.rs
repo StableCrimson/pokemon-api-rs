@@ -2,9 +2,9 @@ mod combat;
 mod pokemon;
 mod trainer;
 
+use combat::PokeBall;
 use pokemon::{BaseStats, GrowthRate, MoveSet, Pokemon, PokemonSpecies, Stats, Type};
 use trainer::Trainer;
-use combat::PokeBall;
 
 fn main() {
     let trainer: Trainer = Trainer::new("Rhyse");
@@ -35,8 +35,14 @@ fn main() {
     );
 
     // TODO: Unwrap or default?
-    let charizard = Pokemon::new(charizard_base, 82, Some(&trainer), None, None)
-        .unwrap_or_else(|err| panic!("{}", err));
+    let charizard = Pokemon::new_caught(
+        charizard_base,
+        82,
+        &trainer,
+        None,
+        Some("Byrne".to_string()),
+    )
+    .unwrap_or_else(|err| panic!("{}", err));
     println!("{}", charizard.exp_for_next_level());
     println!("{:?}", charizard.get_original_trainer_id());
     assert!(!charizard.is_wild());
@@ -44,7 +50,7 @@ fn main() {
     // Try to catch charizard
     let did_catch = combat::catch(PokeBall::Normal, &charizard);
     println!("{did_catch}");
-
+    println!("{charizard:#?}");
 }
 
 // What should the API look like?

@@ -166,7 +166,6 @@ impl PokemonSpecies {
             initial_moves,
         }
     }
-
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -239,14 +238,22 @@ pub struct Pokemon {
 }
 
 impl Pokemon {
-    /// `original_trainer` is optional
-    /// if it isn't provided, the Pokemon is wild
-    pub fn new(
+    pub fn new_caught(
         species: PokemonSpecies,
         level: u8,
-        original_trainer: Option<&Trainer>,
+        original_trainer: &Trainer,
         moveset: Option<MoveSet>,
         nickname: Option<String>,
+    ) -> Result<Self, String> {
+        let mut pokemon = Pokemon::new_wild(species, level, moveset)?;
+        pokemon.register_caught(original_trainer, nickname)?;
+        Ok(pokemon)
+    }
+
+    pub fn new_wild(
+        species: PokemonSpecies,
+        level: u8,
+        moveset: Option<MoveSet>,
     ) -> Result<Self, String> {
         if level < 1 {
             return Err("Cannot instantiate Pokemon below level 1".to_string());
@@ -257,7 +264,6 @@ impl Pokemon {
             None => species.initial_moves,
         };
 
-        let trainer_id = original_trainer.map(|trainer| trainer.trainer_id);
         let ivs = BaseStats::generate_ivs();
         let evs = Stats::new(0, 0, 0, 0, 0);
         let stats: Stats = species.base_stats.into();
@@ -269,8 +275,8 @@ impl Pokemon {
             level: 1,
             stats,
             status,
-            original_trainer_id: trainer_id,
-            nickname,
+            original_trainer_id: None,
+            nickname: None,
             exp: 0,
             evs,
             ivs,
@@ -313,10 +319,11 @@ impl Pokemon {
     }
 
     pub fn get_name(&self) -> &str {
-        match &self.nickname {
-            Some(s) => s,
-            None => &self.species.name,
+        if let Some(nickname) = &self.nickname {
+            return nickname;
         }
+
+        &self.species.name
     }
 
     pub fn get_original_trainer_id(&self) -> Option<u16> {
@@ -385,10 +392,6 @@ impl Pokemon {
         &self.stats
     }
 
-    pub fn set_stats(&mut self, stats: Stats) {
-        self.stats = stats;
-    }
-
     pub fn has_status_effect(&self, status: Status) -> bool {
         self.status & status as u8 > 0
     }
@@ -399,5 +402,22 @@ impl Pokemon {
 
     pub fn is_outsider(&self, trainer_id: u16) -> bool {
         self.original_trainer_id != Some(trainer_id)
+    }
+
+    pub fn register_caught(
+        &mut self,
+        original_trainer: &Trainer,
+        nickname: Option<String>,
+    ) -> Result<(), String> {
+        if !self.is_wild() {
+            return Err(format!(
+                "{} has already been caught, cannot re-register",
+                self.get_name()
+            ));
+        }
+
+        self.nickname = nickname;
+        self.original_trainer_id = Some(original_trainer.trainer_id);
+        Ok(())
     }
 }
